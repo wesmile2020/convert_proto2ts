@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package lib;
-
-message interface {
-    int32 a = 1;
-}

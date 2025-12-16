@@ -1,0 +1,51 @@
+import { TokenType } from './TokenType';
+
+export const KEYWORDS: Record<string, TokenType> = {
+  syntax: TokenType.SYNTAX,
+  package: TokenType.PACKAGE,
+  import: TokenType.IMPORT,
+  message: TokenType.MESSAGE,
+  enum: TokenType.ENUM,
+  service: TokenType.SERVICE,
+  rpc: TokenType.RPC,
+  returns: TokenType.RETURNS,
+  optional: TokenType.OPTIONAL,
+  repeated: TokenType.REPEATED,
+  required: TokenType.REQUIRED,
+  map: TokenType.MAP,
+  oneof: TokenType.ONEOF,
+
+  // 基本类型
+  double: TokenType.DOUBLE,
+  float: TokenType.FLOAT,
+  int32: TokenType.INT32,
+  int64: TokenType.INT64,
+  uint32: TokenType.UINT32,
+  uint64: TokenType.UINT64,
+  sint32: TokenType.SINT32,
+  sint64: TokenType.SINT64,
+  fixed32: TokenType.FIXED32,
+  fixed64: TokenType.FIXED64,
+  sfixed32: TokenType.SFIXED32,
+  sfixed64: TokenType.SFIXED64,
+  bool: TokenType.BOOL,
+  string: TokenType.STRING,
+  bytes: TokenType.BYTES,
+};
+
+export const SYMBOLS: Record<string, TokenType> = {
+  ';': TokenType.SEMICOLON,
+  ',': TokenType.COMMA,
+  '.': TokenType.DOT,
+  '=': TokenType.EQUAL,
+  '{': TokenType.LBRACE,
+  '}': TokenType.RBRACE,
+  '[': TokenType.LBRACKET,
+  ']': TokenType.RBRACKET,
+  '(': TokenType.L_PARENTHESES,
+  ')': TokenType.R_PARENTHESES,
+  '<': TokenType.L_ANGLE,
+  '>': TokenType.R_ANGLE,
+  '/': TokenType.SLASH,
+  '*': TokenType.STAR,
+};
