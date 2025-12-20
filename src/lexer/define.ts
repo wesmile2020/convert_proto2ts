@@ -7,6 +7,7 @@ export const KEYWORDS: Record<string, TokenType> = {
   message: TokenType.MESSAGE,
   enum: TokenType.ENUM,
   service: TokenType.SERVICE,
+  option: TokenType.OPTION,
   rpc: TokenType.RPC,
   returns: TokenType.RETURNS,
   optional: TokenType.OPTIONAL,
@@ -14,6 +15,10 @@ export const KEYWORDS: Record<string, TokenType> = {
   required: TokenType.REQUIRED,
   map: TokenType.MAP,
   oneof: TokenType.ONEOF,
+  to: TokenType.TO,
+  reserved: TokenType.RESERVED,
+  extensions: TokenType.EXTENSIONS,
+  extend: TokenType.EXTEND,
 
   // 基本类型
   double: TokenType.DOUBLE,
@@ -31,7 +36,7 @@ export const KEYWORDS: Record<string, TokenType> = {
   bool: TokenType.BOOL,
   string: TokenType.STRING,
   bytes: TokenType.BYTES,
-};
+} as const;
 
 export const SYMBOLS: Record<string, TokenType> = {
   ';': TokenType.SEMICOLON,
@@ -48,4 +53,4 @@ export const SYMBOLS: Record<string, TokenType> = {
   '>': TokenType.R_ANGLE,
   '/': TokenType.SLASH,
   '*': TokenType.STAR,
-};
+} as const;

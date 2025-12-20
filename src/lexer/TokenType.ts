@@ -1,65 +1,68 @@
-export const TokenType = {
+export const enum TokenType {
   /** identifier */
-  IDENTIFIER: 0,
-  STRING_LITERAL: 1,
-  NUMBER_LITERAL: 2,
+  IDENTIFIER,
+  STRING_LITERAL,
+  NUMBER_LITERAL,
 
   /** keyword */
-  SYNTAX: 3,
-  PACKAGE: 4,
-  IMPORT: 5,
-  MESSAGE: 6,
-  ENUM: 7,
-  SERVICE: 8,
-  RPC: 9,
-  RETURNS: 10,
-  OPTIONAL: 11,
-  REPEATED: 12,
-  REQUIRED: 13,
-  MAP: 14,
-  ONEOF: 15,
+  SYNTAX,
+  PACKAGE,
+  IMPORT,
+  MESSAGE,
+  ENUM,
+  SERVICE,
+  OPTION,
+  RPC,
+  RETURNS,
+  OPTIONAL,
+  REPEATED,
+  REQUIRED,
+  MAP,
+  ONEOF,
+  TO,
+  RESERVED,
+  EXTENSIONS,
+  EXTEND,
 
   /** type */
-  DOUBLE: 16,
-  FLOAT: 17,
-  INT32: 18,
-  INT64: 19,
-  UINT32: 20,
-  UINT64: 21,
-  SINT32: 22,
-  SINT64: 23,
-  FIXED32: 24,
-  FIXED64: 25,
-  SFIXED32: 26,
-  SFIXED64: 27,
-  BOOL: 28,
-  STRING: 29,
-  BYTES: 30,
+  DOUBLE,
+  FLOAT,
+  INT32,
+  INT64,
+  UINT32,
+  UINT64,
+  SINT32,
+  SINT64,
+  FIXED32,
+  FIXED64,
+  SFIXED32,
+  SFIXED64,
+  BOOL,
+  STRING,
+  BYTES,
 
   /** symbol */
-  SEMICOLON: 31,  // ;
-  COMMA: 32,  // ,
-  DOT: 33,  // .
-  EQUAL: 34,  // =
-  LBRACE: 35,  // {
-  RBRACE: 36,  // }
-  LBRACKET: 37,  // [
-  RBRACKET: 38,  // ]
-  L_PARENTHESES: 39,  // (
-  R_PARENTHESES: 40,  // )
-  L_ANGLE: 41,  // <
-  R_ANGLE: 42,  // >
-  SLASH: 43,  // /
-  STAR: 44,  // *
+  SEMICOLON,  // ;
+  COMMA,  // ,
+  DOT,  // .
+  EQUAL,  // =
+  LBRACE,  // {
+  RBRACE,  // }
+  LBRACKET,  // [
+  RBRACKET,  // ]
+  L_PARENTHESES,  // (
+  R_PARENTHESES,  // )
+  L_ANGLE,  // <
+  R_ANGLE,  // >
+  SLASH,  // /
+  STAR,  // *
 
   /** other */
-  COMMENT: 45,  // // 或 /* */
-  WHITESPACE: 46,  // 空格
-  NEWLINE: 47,  // 换行
-  EOF: 48,  // 文件结束
+  COMMENT,  // // 或 /* */
+  WHITESPACE,  // 空格
+  NEWLINE,  // 换行
+  EOF,  // 文件结束
 };
-
-export type TokenType = (typeof TokenType)[keyof typeof TokenType];
 
 export interface Token {
   type: TokenType;
