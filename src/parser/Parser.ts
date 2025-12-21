@@ -462,28 +462,32 @@ class Parser {
   }
 
   parse(): ParseResult {
-    let syntax: SyntaxNode | null = null;
-    let pkg: PackageNode | null = null;
-    const options: OptionNode[] = [];
-    const imports: ImportNode[] = [];
-    const messages: MessageNode[] = [];
-    const enums: EnumNode[] = [];
-    const services: ServiceNode[] = [];
-    const extendsList: ExtendNode[] = [];
+    const protoFile: ProtoFileNode = {
+      type: ASTKind.PROTO_FILE,
+      position: this._createPosition(0, this._tokens[this._tokens.length - 1].end, this._tokens[0]),
+      syntax: null,
+      package: null,
+      options: [],
+      imports: [],
+      messages: [],
+      enums: [],
+      services: [],
+      extends: [],
+    };
 
     while (this._position < this._tokens.length) {
       if (this._current().type === TokenType.SYNTAX) {
-        syntax = this._parseSyntax();
+        protoFile.syntax = this._parseSyntax();
         continue;
       }
       if (this._current().type === TokenType.PACKAGE) {
-        pkg = this._parsePackage();
+        protoFile.package = this._parsePackage();
         continue;
       }
       if (this._current().type === TokenType.IMPORT) {
         const importNode = this._parseImport();
         if (importNode) {
-          imports.push(importNode);
+          protoFile.imports.push(importNode);
         }
         continue;
       }
@@ -491,7 +495,7 @@ class Parser {
       if (this._current().type === TokenType.OPTION) {
         const optionNode = this._parseOption();
         if (optionNode) {
-          options.push(optionNode);
+          protoFile.options.push(optionNode);
         }
         continue;
       }
@@ -499,7 +503,7 @@ class Parser {
       if (this._current().type === TokenType.ENUM) {
         const enumNode = this._parseEnum();
         if (enumNode) {
-          enums.push(enumNode);
+          protoFile.enums.push(enumNode);
         }
         continue;
       }
@@ -507,21 +511,7 @@ class Parser {
       this._position += 1; // Prevent infinite loop for this example
     }
 
-    return {
-      ast: {
-        type: ASTKind.PROTO_FILE,
-        position: this._createPosition(0, this._tokens[this._tokens.length - 1].end, this._tokens[0]),
-        syntax,
-        package: pkg,
-        options,
-        imports,
-        messages,
-        enums,
-        services,
-        extends: extendsList,
-      },
-      errors: this._errors
-    };
+    return { ast: protoFile, errors: this._errors };
   }
 }
 
