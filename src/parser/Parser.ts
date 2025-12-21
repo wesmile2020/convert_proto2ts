@@ -312,6 +312,9 @@ class Parser {
     const ranges: (NumberLiteralNode | StringLiteralNode | ToNode)[] = [];
     while (this._position < this._tokens.length && this._current().type !== TokenType.SEMICOLON) {
       this._transformComments(); // transform and skip comments
+      if (this._current().type === TokenType.SEMICOLON) {
+        break;
+      }
       if (this._current().type === TokenType.NUMBER_LITERAL) {
         const numberLiteral = this._parseNumberLiteral();
         if (!numberLiteral) {
@@ -427,7 +430,6 @@ class Parser {
     const reserved: ReservedNode[] = [];
     while (this._position < this._tokens.length && this._current().type !== TokenType.RBRACE) {
       this._transformComments(); // transform and skip comments
-      
       if (this._current().type === TokenType.RBRACE) {
         break;
       }

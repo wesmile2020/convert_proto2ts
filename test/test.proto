@@ -2,14 +2,14 @@ syntax /* syntax declaration */ = "proto2";
 
 package /* package declaration */ test_package.v1;
 
-import public "google/protobuf/descriptor.proto";
+import public "google/protobuf/descriptor.proto" /* 导入公共描述符 */;
 
-option java_package = "com.example.generated";  // Java 包名
+option java_package = "com.example.generated" /* Java 包名 */;
 
 enum /* enum declaration*/ Gender0_1 {
   // 必须从 0 开始
   MOBILE = 0;        // 默认值
-  HOME = 1;
+  HOME = 1 /* 家庭 */;
   WORK = 2;
   
   // 可以使用别名
@@ -18,7 +18,7 @@ enum /* enum declaration*/ Gender0_1 {
 
   // 预留值（防止其他开发者使用这些编号）
   reserved 3, 10 to 19;
-  reserved "FAX", "PAGER";  // 预留名称
+  reserved "FAX", "PAGER" /* 保留字段名 */;  // 预留名称
 }
 
 message interface {
