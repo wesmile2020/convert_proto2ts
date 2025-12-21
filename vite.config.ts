@@ -9,6 +9,7 @@ export default defineConfig({
       name: 'convert_proto2ts',
       fileName: 'index',
     },
+    sourcemap: true,
   },
 
   resolve: {

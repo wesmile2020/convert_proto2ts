@@ -19,6 +19,9 @@ export const KEYWORDS: Record<string, TokenType> = {
   reserved: TokenType.RESERVED,
   extensions: TokenType.EXTENSIONS,
   extend: TokenType.EXTEND,
+  public: TokenType.PUBLIC,
+  true: TokenType.TRUE,
+  false: TokenType.FALSE,
 
   // 基本类型
   double: TokenType.DOUBLE,

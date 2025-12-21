@@ -12,12 +12,13 @@ export const enum ASTKind {
   IDENTIFIER,
   STRING_LITERAL,
   NUMBER_LITERAL,
+  BOOLEAN_LITERAL,
   OPTION,
   TO,
   RESERVED,
   FIELD,
   ONEOF,
-  ENUM_VALUE,
+  ENUM_FIELD,
   ENUM,
   EXTEND,
   EXTENSIONS,
@@ -47,7 +48,7 @@ export interface NumberLiteralNode extends ASTNode<ASTKind.NUMBER_LITERAL> {
   value: string;
 }
 
-export interface BooleanLiteralNode extends ASTNode<ASTKind.NUMBER_LITERAL> {
+export interface BooleanLiteralNode extends ASTNode<ASTKind.BOOLEAN_LITERAL> {
   value: boolean;
 }
 
@@ -91,14 +92,15 @@ export interface OneofNode extends ASTNode<ASTKind.ONEOF> {
   fields: FieldNode[];
 }
 
-export interface EnumValueNode extends ASTNode<ASTKind.ENUM_VALUE> {
+export interface EnumFieldNode extends ASTNode<ASTKind.ENUM_FIELD> {
   name: IdentifierNode;
   value: NumberLiteralNode;
 }
 
 export interface EnumNode extends ASTNode<ASTKind.ENUM> {
   name: IdentifierNode;
-  values: EnumValueNode[];
+  fields: EnumFieldNode[];
+  reserved: ReservedNode[];
 }
 
 export interface ExtensionsNode extends ASTNode<ASTKind.EXTENSIONS> {
@@ -117,7 +119,7 @@ export interface MessageNode extends ASTNode<ASTKind.MESSAGE> {
   enums: EnumNode[];
   extensions: ExtensionsNode | null;
   extends: ExtendNode[];
-  reserved: ReservedNode | null;
+  reserved: ReservedNode[];
   messages: MessageNode[];
 }
 
@@ -148,8 +150,15 @@ export interface ProtoFileNode extends ASTNode<ASTKind.PROTO_FILE> {
   syntax: SyntaxNode | null;
   package: PackageNode | null;
   imports: ImportNode[];
+  options: OptionNode[];
   messages: MessageNode[];
   enums: EnumNode[];
   services: ServiceNode[];
   extends: ExtendNode[];
+}
+
+export interface ParseError {
+  message: string;
+  position: Position;
+  expected?: string[];
 }

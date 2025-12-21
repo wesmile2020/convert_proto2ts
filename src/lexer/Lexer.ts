@@ -45,10 +45,16 @@ class Lexer {
   }
   
   private _current(): string {
+    if (this._position >= this._source.length) {
+      return '';
+    }
     return this._source[this._position];
   }
 
   private _next(): string {
+    if (this._position + 1 >= this._source.length) {
+      return '';
+    }
     return this._source[this._position + 1];
   }
 
@@ -163,7 +169,7 @@ class Lexer {
     this._position += 1;
     this._column += 1;
 
-    return this._createToken(TokenType.STRING, value, start, startLine, startColumn);
+    return this._createToken(TokenType.STRING_LITERAL, value, start, startLine, startColumn);
   }
 
   private _readNumber(): Token {

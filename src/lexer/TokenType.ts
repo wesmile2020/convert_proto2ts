@@ -23,6 +23,9 @@ export const enum TokenType {
   RESERVED,
   EXTENSIONS,
   EXTEND,
+  PUBLIC,
+  TRUE,
+  FALSE,
 
   /** type */
   DOUBLE,
@@ -42,20 +45,35 @@ export const enum TokenType {
   BYTES,
 
   /** symbol */
-  SEMICOLON,  // ;
-  COMMA,  // ,
-  DOT,  // .
-  EQUAL,  // =
-  LBRACE,  // {
-  RBRACE,  // }
-  LBRACKET,  // [
-  RBRACKET,  // ]
-  L_PARENTHESES,  // (
-  R_PARENTHESES,  // )
-  L_ANGLE,  // <
-  R_ANGLE,  // >
-  SLASH,  // /
-  STAR,  // *
+
+  /** ; */
+  SEMICOLON,
+  /** , */
+  COMMA,
+  /** . */
+  DOT,
+  /** = */
+  EQUAL,
+  /** { */
+  LBRACE,
+  /** } */
+  RBRACE,
+  /** [ */
+  LBRACKET,
+  /** ] */
+  RBRACKET,
+  /** ( */
+  L_PARENTHESES,
+  /** ) */
+  R_PARENTHESES,
+  /** < */
+  L_ANGLE,
+  /** > */
+  R_ANGLE,
+  /** / */
+  SLASH,
+  /** * */
+  STAR,
 
   /** other */
   COMMENT,  // // 或 /* */

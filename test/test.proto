@@ -1,16 +1,29 @@
-syntax = "proto2";
- 
-// import public "google/protobuf/descriptor.proto";
+syntax /* syntax declaration */ = "proto2";
 
-enum Gender {
-  UNKNOWN = 0;
-  MALE = 1;
-  FEMALE = 2;
+package /* package declaration */ test_package.v1;
+
+import public "google/protobuf/descriptor.proto";
+
+option java_package = "com.example.generated";  // Java 包名
+
+enum /* enum declaration*/ Gender0_1 {
+  // 必须从 0 开始
+  MOBILE = 0;        // 默认值
+  HOME = 1;
+  WORK = 2;
+  
+  // 可以使用别名
+  
+  // extensions 100 to max;
+
+  // 预留值（防止其他开发者使用这些编号）
+  reserved 3, 10 to 19;
+  reserved "FAX", "PAGER";  // 预留名称
 }
 
 message interface {
   required string name = 1 [json_name = "full_name"];
-  required int32 age = 2;
+  required int32 age = 2 [json_name = "age"];
   repeated string tags = 3;
 
   message address {
@@ -23,6 +36,7 @@ message interface {
     optional string description = 2;
     extensions 3, 10 to 199;
     reserved  "msg";
+    reserved 4, /* end*/ 9;
   }
 
   extend BaseMessage {
