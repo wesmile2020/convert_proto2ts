@@ -1,4 +1,4 @@
-import { isDigit, isIdentifierChar, isIdentifierStart, isWhitespace } from '@/utils/utils';
+import { isDigit, isIdentifierChar, isIdentifierStart, isWhitespace } from './helper';
 import { TokenType, type LexerError, type Token } from './TokenType';
 import { KEYWORDS, SYMBOLS } from './define';
 

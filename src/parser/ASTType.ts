@@ -7,6 +7,7 @@ export interface Position {
 
 export const enum ASTKind {
   FIELD_TYPE,
+  FIELD_LABEL,
   FIELD_OPTION,
 
   IDENTIFIER,
@@ -67,7 +68,13 @@ export interface ReservedNode extends ASTNode<ASTKind.RESERVED> {
 }
 
 export interface FieldTypeNode extends ASTNode<ASTKind.FIELD_TYPE> {
-  name: IdentifierNode;
+  name: string;
+}
+
+export type LabelType = 'optional' | 'required' | 'repeated';
+
+export interface FiledLabelNode extends ASTNode<ASTKind.FIELD_LABEL> {
+  value: LabelType;
 }
 
 export interface FiledTypeWithArgumentsNode extends FieldTypeNode {
@@ -83,7 +90,7 @@ export interface FieldNode extends ASTNode<ASTKind.FIELD> {
   name: IdentifierNode;
   fieldType: FieldTypeNode;
   fieldNumber: NumberLiteralNode;
-  label: 'optional' | 'required' | 'repeated' | null;
+  label: FiledLabelNode | null;
   options: FieldOptionNode[];
 }
 

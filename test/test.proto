@@ -22,25 +22,25 @@ enum /* enum declaration*/ Gender0_1 {
 }
 
 message interface {
-  required string name = 1 [json_name = "full_name"];
+  required string name = 1 [json_name = "full_name",];
   required int32 age = 2 [json_name = "age"];
   repeated string tags = 3;
 
-  message address {
-    required string street = 1;
-    required string city = 2;
-  }
+  // message address {
+  //   required string street = 1;
+  //   required string city = 2;
+  // }
 
-  message BaseMessage {
-    required int32 id = 1;
-    optional string description = 2;
-    extensions 3, 10 to 199;
-    reserved  "msg";
-    reserved 4, /* end*/ 9;
-  }
+  // message BaseMessage {
+  //   required int32 id = 1;
+  //   optional string description = 2;
+  //   extensions 3, 10 to 199;
+  //   reserved  "msg";
+  //   reserved 4, /* end*/ 9;
+  // }
 
-  extend BaseMessage {
-    optional string extra_field = 10;
-  }
+  // extend BaseMessage {
+  //   optional string extra_field = 10;
+  // }
 }
 
