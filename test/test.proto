@@ -1,4 +1,4 @@
-syntax /* syntax declaration */ = "proto2";
+syntax /* syntax declaration */ = "proto2"
 
 package /* package declaration */ test_package.v1;
 
@@ -14,33 +14,33 @@ enum /* enum declaration*/ Gender0_1 {
   
   // 可以使用别名
   
-  // extensions 100 to max;
-
   // 预留值（防止其他开发者使用这些编号）
   reserved 3, 10 to 19;
-  reserved "FAX", "PAGER" /* 保留字段名 */;  // 预留名称
+  reserved "FAX", "PAGER"; /* 保留字段名 */  // 预留名称
 }
 
 message interface {
-  required string name = 1 [json_name = "full_name",];
+  required string name = 1 [json_name = "full_name"];
   required int32 age = 2 [json_name = "age"];
-  repeated string tags = 3;
+  repeated string tags = 3 [json_name = "tags"];
 
-  // message address {
-  //   required string street = 1;
-  //   required string city = 2;
-  // }
+  message address {
+    required string street = 1;
+    required string city = 2;
+  }
 
-  // message BaseMessage {
-  //   required int32 id = 1;
-  //   optional string description = 2;
-  //   extensions 3, 10 to 199;
-  //   reserved  "msg";
-  //   reserved 4, /* end*/ 9;
-  // }
+  extend BaseMessage {
+    optional string extra_field = 10;
+  }
 
-  // extend BaseMessage {
-  //   optional string extra_field = 10;
-  // }
+  message BaseMessage {
+    required int32 id = 1;
+    optional string description = 2 /*描述*/;
+    extensions 3, 10 to 199;
+    reserved  "msg", /* 保留字段名 */ "location";
+    reserved 4, /* end */ 9;
+  }
+
 }
+
 

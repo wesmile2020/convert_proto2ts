@@ -66,13 +66,6 @@ class Parser {
     return this._tokens[this._position];
   }
 
-  private _next(): Token {
-    if (this._position + 1 >= this._tokens.length) {
-      return EOF_TOKEN;
-    }
-    return this._tokens[this._position + 1];
-  }
-
   private _expect(type: TokenType, message: string): boolean {
     if (this._current().type === type) {
       return true;
@@ -106,6 +99,7 @@ class Parser {
 
   private _parseStringLiteral(message: string): StringLiteralNode | null {
     if (!this._expect(TokenType.STRING_LITERAL, message)) {
+      this._position += 1;
       return null;
     }
     const token = this._current();
@@ -119,6 +113,7 @@ class Parser {
 
   private _parseNumberLiteral(message: string): NumberLiteralNode | null {
     if (!this._expect(TokenType.NUMBER_LITERAL, message)) {
+      this._position += 1;
       return null;
     }
     const token = this._current();
@@ -133,6 +128,7 @@ class Parser {
   private _parseBooleanLiteral(message: string): BooleanLiteralNode | null {
     if (!this._expect(TokenType.TRUE, message)
       && !this._expect(TokenType.FALSE, message)) {
+      this._position += 1;
       return null;
     }
     const token = this._current();
@@ -148,6 +144,7 @@ class Parser {
     const token = this._current();
     if (!isLabelToken(token)) {
       this._addError('Expected `optional`, `required`, or `repeated` label.');
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip label token
@@ -162,6 +159,7 @@ class Parser {
   private _parseIdentifier(message: string): IdentifierNode | null {
     if (!isValidIdentifier(this._current().value)) {
       this._addError(message);
+      this._position += 1;
       return null;
     }
     const token = this._current();
@@ -176,6 +174,7 @@ class Parser {
   private _parseQualifiedIdentifier(message: string): IdentifierNode | null {
     if (!isValidIdentifier(this._current().value)) {
       this._addError(message);
+      this._position += 1;
       return null;
     }
     const startToken = this._current();
@@ -197,31 +196,33 @@ class Parser {
     };
   }
 
-    private _skip(tokenType: TokenType): void {
+  private _skip(tokenType: TokenType): void {
     while (this._position < this._tokens.length && this._current().type === tokenType) {
       this._position += 1;
     }
   }
 
-  private _transformComments() {
+  private _parseComments() {
     this._skip(TokenType.COMMENT);
   }
 
   private _parseSyntax(): SyntaxNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'syntax'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.EQUAL, "Expected '=' after 'syntax'.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip '='
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const version = this._parseStringLiteral("Expected string literal after '=' in syntax.");
     if (!version) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after syntax version.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -236,13 +237,14 @@ class Parser {
   private _parsePackage(): PackageNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'package'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const packageName = this._parseQualifiedIdentifier('Expected package name after "package" keyword.');
     if (!packageName) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after package name.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -257,17 +259,18 @@ class Parser {
   private _parseImport(): ImportNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'import'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (this._current().type === TokenType.PUBLIC) {
       this._position += 1; // skip 'public'
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const importPath = this._parseStringLiteral("Expected import path after import keyword.");
     if (!importPath) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after import path.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -282,17 +285,17 @@ class Parser {
   private _parseOption(): OptionNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'option'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const optionName = this._parseQualifiedIdentifier("Expected option name after 'option' keyword.");
     if (!optionName) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.EQUAL, "Expected '=' after option name.")) {
       return null;
     }
     this._position += 1; // skip '='
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     let optionValue: StringLiteralNode | NumberLiteralNode | BooleanLiteralNode | null = null;
     if (this._current().type === TokenType.STRING_LITERAL) {
       optionValue = this._parseStringLiteral("Expected option value (string).");
@@ -303,10 +306,12 @@ class Parser {
     }
     if (!optionValue) {
       this._addError("Expected option value (string, number, or boolean).");
+      this._position += 1;
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after option value.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -322,22 +327,18 @@ class Parser {
   private _parseReserved(): ReservedNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'reserved'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const ranges: (NumberLiteralNode | StringLiteralNode | ToNode)[] = [];
     while (this._position < this._tokens.length && this._current().type !== TokenType.SEMICOLON) {
-      this._transformComments(); // transform and skip comments
-      if (this._current().type === TokenType.SEMICOLON) {
-        break;
-      }
+      this._parseComments(); // parse and skip comments
       if (this._current().type === TokenType.NUMBER_LITERAL) {
         const numberLiteral = this._parseNumberLiteral('Expected number literal in reserved range.');
         if (!numberLiteral) {
-          this._position += 1;
           continue;
         }
         if (this._current().type === TokenType.TO) {
           this._position += 1; // skip 'to'
-          this._transformComments(); // transform and skip comments
+          this._parseComments(); // parse and skip comments
           const endNumberLiteral = this._parseNumberLiteral("Expected number literal after 'to' in reserved range.");
           if (endNumberLiteral) {
             ranges.push({
@@ -349,12 +350,17 @@ class Parser {
           }
         } else {
           ranges.push(numberLiteral);
-          if (this._current().type === TokenType.NUMBER_LITERAL) {
-            this._addError('Expected "," between reserved numbers.');
-          }
+        }
+        if (this._current().type === TokenType.NUMBER_LITERAL) {
+          this._addError('Expected "," between reserved numbers.');
+          this._position += 1;
         }
         if (this._current().type === TokenType.COMMA) {
           this._position += 1; // skip ','
+          this._parseComments(); // parse and skip comments
+          if (this._current().type !== TokenType.NUMBER_LITERAL) {
+            this._addError('Expected a number literal after "," in reserved.');
+          }
         }
         continue;
       }
@@ -365,28 +371,99 @@ class Parser {
         }
         if (this._current().type === TokenType.STRING_LITERAL) {
           this._addError("Expected ',' between reserved strings.");
+          this._position += 1;
         }
         if (this._current().type === TokenType.COMMA) {
           this._position += 1; // skip ','
+          this._parseComments(); // parse and skip comments
+          if (this._current().type !== TokenType.STRING_LITERAL) {
+            this._addError('Expected a string literal after "," in reserved.');
+          }
         }
         continue;
       }
       if (this._current().type === TokenType.COMMA) {
-        this._addError('Expect identifier or number before ",".');
+        this._addError('Expect identifier or number before "," in reserved.');
         this._position += 1;
         continue;
+      }
+
+      if (this._current().type === TokenType.SEMICOLON) {
+        break;
       }
       this._addError(`Unexpected Token: ${this._current().value} in reserved range.`);
       this._position += 1; // forward to prevent infinite loop
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after reserved ranges.")) {
       return null;
     }
     this._position += 1; // skip ';'
-
     return {
       type: ASTKind.RESERVED,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+      ranges,
+    };
+  }
+
+  private _parseExtensions(): ExtensionsNode | null {
+    const startToken = this._current();
+    this._position += 1; // skip 'extensions'
+    this._parseComments(); // parse and skip comments
+    const ranges: (NumberLiteralNode | ToNode)[] = [];
+    while (this._position < this._tokens.length && this._current().type !== TokenType.SEMICOLON) {
+      this._parseComments(); // parse and skip comments
+      if (this._current().type === TokenType.NUMBER_LITERAL) {
+        const numberLiteral = this._parseNumberLiteral('Expected number literal in extensions range.');
+        if (!numberLiteral) {
+          continue;
+        }
+        if (this._current().type === TokenType.TO) {
+          this._position += 1; // skip 'to'
+          this._parseComments(); // parse and skip comments
+          const endNumberLiteral = this._parseNumberLiteral("Expected number literal after 'to' in extensions range.");
+          if (endNumberLiteral) {
+            ranges.push({
+              type: ASTKind.TO,
+              position: this._createPosition(numberLiteral.position.start, endNumberLiteral.position.end, startToken),
+              start: numberLiteral,
+              end: endNumberLiteral,
+            });
+          }
+        } else {
+          ranges.push(numberLiteral);
+        }
+        if (this._current().type === TokenType.NUMBER_LITERAL) {
+          this._addError('Expected "," between extensions numbers.');
+          this._position += 1;
+        }
+        if (this._current().type === TokenType.COMMA) {
+          this._position += 1; // skip ','
+          this._parseComments(); // parse and skip comments
+          if (this._current().type !== TokenType.NUMBER_LITERAL) {
+            this._addError('Expected a number literal after "," in extensions.');
+          }
+        }
+        continue;
+      }
+      if (this._current().type === TokenType.COMMA) {
+        this._addError('Expected number before ",".');
+        continue;
+      }
+
+      if (this._current().type === TokenType.SEMICOLON) {
+        break;
+      }
+      this._addError(`Unexpected Token: ${this._current().value} in extensions range.`);
+      this._position += 1; // forward to prevent infinite loop
+    }
+    this._parseComments(); // parse and skip comments
+    if (!this._expect(TokenType.SEMICOLON, "Expected ';' after extensions ranges.")) {
+      return null;
+    }
+    this._position += 1; // skip ';'
+    return {
+      type: ASTKind.EXTENSIONS,
       position: this._createPosition(startToken.start, this._previous().end, startToken),
       ranges,
     };
@@ -398,18 +475,20 @@ class Parser {
     if (!name) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.EQUAL, `Expected '=' after enum field name.`)) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip '='
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const numberLiteral = this._parseNumberLiteral(`Expected number literal after '=' in enum field.`);
     if (!numberLiteral) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.SEMICOLON, "Expected ';' after enum field.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -424,13 +503,14 @@ class Parser {
   private _parseEnum(): EnumNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'enum'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const enumName = this._parseIdentifier('Expected enum name.');
     if (!enumName) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.LBRACE, "Expected '{' after enum name.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip '{'
@@ -438,10 +518,8 @@ class Parser {
     const enumFields: EnumFieldNode[] = [];
     const reserved: ReservedNode[] = [];
     while (this._position < this._tokens.length && this._current().type !== TokenType.RBRACE) {
-      this._transformComments(); // transform and skip comments
-      if (this._current().type === TokenType.RBRACE) {
-        break;
-      }
+      this._parseComments(); // parse and skip comments
+
       if (this._current().type === TokenType.RESERVED) {
         // parse reserved
         const reservedNode = this._parseReserved();
@@ -457,8 +535,10 @@ class Parser {
         }
         continue;
       }
-
-      this._addError("Expected enum field or reserved.");
+      if (this._current().type === TokenType.RBRACE) {
+        break;
+      }
+      this._addError(`Unexpected Token: ${this._current().value} in enum.`);
       this._position += 1; // Prevent infinite loop for this example
     }
     this._position += 1; // skip '}'
@@ -476,6 +556,7 @@ class Parser {
     const token = this._current();
     if (!isInternalTypeToken(token)) {
       this._addError(`Unexpected Token: ${token.value} in not support type.`);
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip internal type token
@@ -486,56 +567,64 @@ class Parser {
     };
   }
 
-  private _parseFieldOptions(): FieldOptionNode[] {
-    const options: FieldOptionNode[] = [];
+  private _parseFieldOptions(): FieldOptionNode[] | null {
     if (this._current().type !== TokenType.LBRACKET) {
-      return options;
+      this._position += 1;
+      return null;
     }
+    const options: FieldOptionNode[] = [];
     this._position += 1; // skip '['
     while (this._position < this._tokens.length && this._current().type !== TokenType.RBRACKET) {
-      this._transformComments(); // transform and skip comments
-      if (this._current().type === TokenType.RBRACKET) {
-        break;
-      }
+      this._parseComments(); // parse and skip comments
       const startToken = this._current();
-      const optionsName = this._parseIdentifier('Expected option name in field options.');
-      if (!optionsName) {
+      const optionName = this._parseIdentifier('Expected option name in field options.');
+      if (!optionName) {
         continue;
       }
-      this._transformComments(); // transform and skip comments
-      if (!this._expect(TokenType.EQUAL, 'Expected "=" after option name.')) {
+      this._parseComments(); // parse and skip comments
+      if (!this._expect(TokenType.EQUAL, 'Expected "=" after option name in field options.')) {
         this._position += 1;
         continue;
       }
       this._position += 1; // skip '='
-      this._transformComments(); // transform and skip comments
+      this._parseComments(); // parse and skip comments
       let optionValue: StringLiteralNode | BooleanLiteralNode | NumberLiteralNode | null = null;
       if (this._current().type === TokenType.STRING_LITERAL) {
-        optionValue = this._parseStringLiteral('Expected string literal after "=" in field option.');
+        optionValue = this._parseStringLiteral('Expected string literal after "=" in field options.');
       } else if (this._current().type === TokenType.TRUE || this._current().type === TokenType.FALSE) {
-        optionValue = this._parseBooleanLiteral('Expected boolean literal after "=" in field option.');
+        optionValue = this._parseBooleanLiteral('Expected boolean literal after "=" in field options.');
       } else if (this._current().type === TokenType.NUMBER_LITERAL) {
-        optionValue = this._parseNumberLiteral('Expected number literal after "=" in field option.');
+        optionValue = this._parseNumberLiteral('Expected number literal after "=" in field options.');
       }
       if (!optionValue) {
-        this._addError('Expect string, boolean, or number value after "=" in field option.');
+        this._addError('Expect string, boolean, or number value after "=" in field options.');
+        this._position += 1;
         continue;
       }
       options.push({
         type: ASTKind.FIELD_OPTION,
         position: this._createPosition(startToken.start, this._previous().end, startToken),
-        name: optionsName,
+        name: optionName,
         value: optionValue,
       });
-      this._transformComments();
+      this._parseComments();
       
       if (isValidIdentifier(this._current().value)) {
-        this._addError('Expect "," after field option.');
+        this._addError('Expect "," between field options.');
+        this._position += 1;
+        continue;
       }
 
       if (this._current().type === TokenType.COMMA) {
         this._position += 1; // skip ','
+        this._parseComments(); // parse and skip comments
+        if (!isValidIdentifier(this._current().value)) {
+          this._addError('Expect identifier after "," in field options.');
+        }
         continue;
+      }
+      if (this._current().type === TokenType.RBRACKET) {
+        break;
       }
 
       this._addError(`Unexpected Token: ${this._current().value} in field option.`);
@@ -548,13 +637,13 @@ class Parser {
     return options;
   }
 
-  private _parseField(): FieldNode | null {
+  private _parseMessageField(): FieldNode | null {
     const startToken = this._current();
     let label: FiledLabelNode | null = null;
     if (isLabelToken(this._current())) {
       label = this._parseLabel();
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
 
     let fieldType: FieldTypeNode | null = null;
     if (isInternalTypeToken(this._current())) {
@@ -568,28 +657,32 @@ class Parser {
       this._position += 1;
     }
     if (!fieldType) {
-      this._addError('Expect internal type or identifier for field type.');
+      this._addError('Expect internal type or identifier for message field type.');
       return null;
     }
-    this._transformComments(); // transform and skip comments
-    const name = this._parseIdentifier('Expected field name after field type.');
+    this._parseComments(); // parse and skip comments
+    const name = this._parseIdentifier('Expected message field name after message field type.');
     if (!name) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
-    if (!this._expect(TokenType.EQUAL, `Expected '=' after field name.`)) {
+    this._parseComments(); // parse and skip comments
+    if (!this._expect(TokenType.EQUAL, `Expected '=' after message field name.`)) {
       return null;
     }
     this._position += 1; // skip '='
-    this._transformComments(); // transform and skip comments
-    const fieldNumber = this._parseNumberLiteral(`Expected number literal after '=' in field.`);
+    this._parseComments(); // parse and skip comments
+    const fieldNumber = this._parseNumberLiteral(`Expected number literal after '=' in message field.`);
     if (!fieldNumber) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
-    const options = this._parseFieldOptions();
-    this._transformComments(); // transform and skip comments
-    if (!this._expect(TokenType.SEMICOLON, "Expected ';' after field.")) {
+    this._parseComments(); // parse and skip comments
+    let options: FieldOptionNode[] | null = null;
+    if (this._current().type === TokenType.LBRACKET) {
+      options = this._parseFieldOptions();
+    }
+    this._parseComments(); // parse and skip comments
+    if (!this._expect(TokenType.SEMICOLON, "Expected ';' after message field.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip ';'
@@ -600,9 +693,17 @@ class Parser {
       name: name,
       fieldType: fieldType,
       fieldNumber: fieldNumber,
-      label: label,
-      options,
+      label,
+      options: options || [],
     };
+  }
+
+  private _nextEffectiveTokenIndex(startIndex: number): number {
+    let i = Math.min(startIndex + 1, this._tokens.length);
+    while (i < this._tokens.length && this._tokens[i].type === TokenType.COMMENT) {
+      i += 1;
+    }
+    return i;
   }
 
   private _checkIsMessageField(): boolean {
@@ -612,50 +713,114 @@ class Parser {
     ) {
       return true;
     }
-    if (isValidIdentifier(this._current().value)) {
-      for (let i = this._position + 1; i < this._tokens.length; i += 1) {
-        if (this._tokens[i].type === TokenType.SEMICOLON) {
-          break;
-        }
-        if (this._tokens[i].type === TokenType.EQUAL) {
-          return true;
-        }
-      }
+
+    if (!isValidIdentifier(this._current().value)) {
+      return false;
+    }
+
+    const nameIndex = this._nextEffectiveTokenIndex(this._position);
+    if (!isValidIdentifier(this._tokens[nameIndex].value)) {
+      return false;
+    }
+
+    const equalIndex = this._nextEffectiveTokenIndex(nameIndex);
+    if (this._tokens[equalIndex].type !== TokenType.EQUAL) {
+      return false;
     }
 
     return false;
   }
 
+  private _parseExtend(): ExtendNode | null {
+    const startToken = this._current();
+    this._position += 1; // skip 'extend'
+    this._parseComments(); // parse and skip comments
+    const extendName = this._parseIdentifier('Expected extend name after extend keyword.');
+    if (!extendName) {
+      return null;
+    }
+    this._parseComments(); // parse and skip comments
+    if (!this._expect(TokenType.LBRACE, "Expected '{' after extend name.")) {
+      return null;
+    }
+    this._position += 1; // skip '{'
+    const fields: FieldNode[] = [];
+    while (this._position < this._tokens.length && this._current().type !== TokenType.RBRACE) {
+      this._parseComments(); // parse and skip comments
+      if (this._checkIsMessageField()) {
+        const field = this._parseMessageField();
+        if (field) {
+          fields.push(field);
+        }
+        continue;
+      }
+      
+      if (this._current().type === TokenType.RBRACE) {
+        break;
+      }
+      this._addError(`Unexpect token ${this._current().value} in extend body.`);
+      this._position += 1;
+    }
+    if (!this._expect(TokenType.RBRACE, "Expected '}' after message body.")) {
+      this._position += 1;
+      return null;
+    }
+    this._position += 1; // skip '}'
+    return {
+      type: ASTKind.EXTEND,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+      name: extendName,
+      fields: fields,
+    };
+  }
+
   private _parseMessage(): MessageNode | null {
     const startToken = this._current();
     this._position += 1; // skip 'message'
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     const messageName = this._parseIdentifier('Expected message name after message keyword.');
     if (!messageName) {
       return null;
     }
-    this._transformComments(); // transform and skip comments
+    this._parseComments(); // parse and skip comments
     if (!this._expect(TokenType.LBRACE, "Expected '{' after message name.")) {
       return null;
     }
     this._position += 1; // skip '{'
     
     const fields: FieldNode[] = [];
-    const oneofs: OneofNode[] = [];
     const enums: EnumNode[] = [];
+    const messages: MessageNode[] = [];
+    const reserved: ReservedNode[] = [];
     let extensions: ExtensionsNode | null = null;
     const extendNodes: ExtendNode[] = [];
-    const reserved: ReservedNode[] = [];
-    const messages: MessageNode[] = [];
+    const oneofs: OneofNode[] = [];
+
     while (this._position < this._tokens.length && this._current().type !== TokenType.RBRACE) {
-      this._transformComments(); // transform and skip comments
-      if (this._current().type === TokenType.RBRACE) {
-        break;
-      }
+      this._parseComments(); // parse and skip comments
+      
       if (this._checkIsMessageField()) {
-        const field = this._parseField();
+        const field = this._parseMessageField();
         if (field) {
           fields.push(field);
+        }
+        continue;
+      }
+
+      // TODO: parse oneof
+
+      if (this._current().type === TokenType.EXTEND) {
+        const extendNode = this._parseExtend();
+        if (extendNode) {
+          extendNodes.push(extendNode);
+        }
+        continue;
+      }
+      
+      if (this._current().type === TokenType.ENUM) {
+        const enumNode = this._parseEnum();
+        if (enumNode) {
+          enums.push(enumNode);
         }
         continue;
       }
@@ -669,7 +834,6 @@ class Parser {
       }
       
       if (this._current().type === TokenType.RESERVED) {
-        // parse reserved
         const reservedNode = this._parseReserved();
         if (reservedNode) {
           reserved.push(reservedNode);
@@ -677,13 +841,22 @@ class Parser {
         continue;
       }
 
+      if (this._current().type === TokenType.EXTENSIONS) {
+        extensions = this._parseExtensions();
+        continue;
+      }
+
+      if (this._current().type === TokenType.RBRACE) {
+        break;
+      }
+      this._addError(`Unexpect token ${this._current().value} in message body.`);
       this._position += 1;
     }
     if (!this._expect(TokenType.RBRACE, "Expected '}' after message body.")) {
+      this._position += 1;
       return null;
     }
     this._position += 1; // skip '}'
-    
     return {
       type: ASTKind.MESSAGE,
       position: this._createPosition(startToken.start, this._previous().end, startToken),
@@ -752,6 +925,8 @@ class Parser {
         }
         continue;
       }
+
+      this._addError(`Unexpect token ${this._current().value} in proto file.`);
 
       this._position += 1; // Prevent infinite loop for this example
     }
