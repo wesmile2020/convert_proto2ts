@@ -1,8 +1,8 @@
-syntax /* syntax declaration */ = "proto2"
+syntax /* syntax declaration */ = "proto2" /* proto2 语法 */;
 
-package /* package declaration */ test_package.v1;
+package /* package declaration */ test_package;
 
-import public "google/protobuf/descriptor.proto" /* 导入公共描述符 */;
+import public "google/protobuf/descriptor.proto"; /* 导入公共描述符 */;
 
 option java_package = "com.example.generated" /* Java 包名 */;
 

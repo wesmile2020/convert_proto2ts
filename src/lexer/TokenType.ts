@@ -76,10 +76,12 @@ export const enum TokenType {
   STAR,
 
   /** other */
-  COMMENT,  // // 或 /* */
-  WHITESPACE,  // 空格
-  NEWLINE,  // 换行
-  EOF,  // 文件结束
+  /** comment // or /* */
+  COMMENT,
+  /** : */
+  COLON,
+  /** end of file */
+  EOF,
 };
 
 export interface Token {

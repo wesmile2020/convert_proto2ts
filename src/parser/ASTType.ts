@@ -1,3 +1,5 @@
+import type { TokenType } from "@/lexer/TokenType";
+
 export interface Position {
   line: number;
   column: number;
@@ -142,6 +144,7 @@ export interface ServiceNode extends ASTNode<ASTKind.SERVICE> {
 }
 
 export interface ImportNode extends ASTNode<ASTKind.IMPORT> {
+  publicKeyword: 'public' | '';
   path: StringLiteralNode;
 }
 
@@ -167,5 +170,5 @@ export interface ProtoFileNode extends ASTNode<ASTKind.PROTO_FILE> {
 export interface ParseError {
   message: string;
   position: Position;
-  expected?: string[];
+  expected?: TokenType[];
 }

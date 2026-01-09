@@ -74,7 +74,7 @@ class Lexer {
     }
   }
 
-  private _skipLineComment(): void {
+  private _readLineComment(): void {
     const start = this._position;
     const startLine = this._line;
     const startColumn = this._column;
@@ -92,7 +92,7 @@ class Lexer {
     this._tokens.push(token);
   }
 
-  private _skipBlockComment(): void {
+  private _readBlockComment(): void {
     const start = this._position;
     const startLine = this._line;
     const startColumn = this._column;
@@ -231,11 +231,11 @@ class Lexer {
       // skip comment
       if (char === '/') {
         if (this._next() === '/') {
-          this._skipLineComment();
+          this._readLineComment();
           continue;
         }
         if (this._next() === '*') {
-          this._skipBlockComment();
+          this._readBlockComment();
           continue;
         }
       }

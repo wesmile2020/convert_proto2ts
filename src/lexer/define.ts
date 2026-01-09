@@ -56,4 +56,5 @@ export const SYMBOLS: Record<string, TokenType> = {
   '>': TokenType.R_ANGLE,
   '/': TokenType.SLASH,
   '*': TokenType.STAR,
+  ':': TokenType.COLON,
 } as const;
