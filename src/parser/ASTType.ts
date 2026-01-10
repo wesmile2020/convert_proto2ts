@@ -40,7 +40,7 @@ export interface ASTNode<T extends ASTKind = ASTKind> {
 }
 
 export interface IdentifierNode extends ASTNode<ASTKind.IDENTIFIER> {
-  name: string;
+  value: string;
 }
 
 export interface StringLiteralNode extends ASTNode<ASTKind.STRING_LITERAL> {
@@ -71,16 +71,13 @@ export interface ReservedNode extends ASTNode<ASTKind.RESERVED> {
 
 export interface FieldTypeNode extends ASTNode<ASTKind.FIELD_TYPE> {
   name: string;
+  arguments: IdentifierNode[];
 }
 
 export type LabelType = 'optional' | 'required' | 'repeated';
 
 export interface FiledLabelNode extends ASTNode<ASTKind.FIELD_LABEL> {
   value: LabelType;
-}
-
-export interface FiledTypeWithArgumentsNode extends FieldTypeNode {
-  arguments: IdentifierNode[];
 }
 
 export interface FieldOptionNode extends ASTNode<ASTKind.FIELD_OPTION> {
@@ -104,12 +101,14 @@ export interface OneofNode extends ASTNode<ASTKind.ONEOF> {
 export interface EnumFieldNode extends ASTNode<ASTKind.ENUM_FIELD> {
   name: IdentifierNode;
   value: NumberLiteralNode;
+  options: FieldOptionNode[];
 }
 
 export interface EnumNode extends ASTNode<ASTKind.ENUM> {
   name: IdentifierNode;
   fields: EnumFieldNode[];
   reserved: ReservedNode[];
+  options: OptionNode[];
 }
 
 export interface ExtensionsNode extends ASTNode<ASTKind.EXTENSIONS> {
@@ -134,8 +133,8 @@ export interface MessageNode extends ASTNode<ASTKind.MESSAGE> {
 
 export interface RpcMethodNode extends ASTNode<ASTKind.RPC_METHOD> {
   name: IdentifierNode;
-  inputType: FieldTypeNode;
-  outputType: FieldTypeNode;
+  inputType: IdentifierNode;
+  outputType: IdentifierNode;
 }
 
 export interface ServiceNode extends ASTNode<ASTKind.SERVICE> {
@@ -167,7 +166,7 @@ export interface ProtoFileNode extends ASTNode<ASTKind.PROTO_FILE> {
   extends: ExtendNode[];
 }
 
-export interface ParseError {
+export interface ParserError {
   message: string;
   position: Position;
   expected?: TokenType[];

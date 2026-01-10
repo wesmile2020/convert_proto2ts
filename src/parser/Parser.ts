@@ -15,23 +15,25 @@ import {
   type LabelType,
   type MessageNode,
   type NumberLiteralNode,
-  type OneofNode, 
+  type OneofNode,
   type OptionNode,
   type PackageNode,
-  type ParseError,
+  type ParserError,
   type Position,
   type ProtoFileNode,
   type ReservedNode,
+  type RpcMethodNode,
   type ServiceNode,
   type StringLiteralNode,
   type SyntaxNode,
   type ToNode,
 } from './ASTType';
-import { isInternalTypeToken, isLabelToken, isValidIdentifier } from './helper';
+import { isLabelToken, isValidIdentifier } from './helper';
+import { isIdentifierChar } from '@/lexer/helper';
 
-interface ParseResult {
+interface ParserOutput {
   ast: ProtoFileNode | null;
-  errors: ParseError[];
+  errors: ParserError[];
 }
 
 const EOF_TOKEN: Token = {
@@ -46,8 +48,8 @@ const EOF_TOKEN: Token = {
 export class Parser {
   private _tokens: Token[] = [];
   private _position: number = 0;
-  private _errors: ParseError[] = [];
-  
+  private _errors: ParserError[] = [];
+
   constructor(tokens: Token[]) {
     this._tokens = tokens;
   }
@@ -64,6 +66,20 @@ export class Parser {
       return EOF_TOKEN;
     }
     return this._tokens[this._position];
+  }
+
+  private _nextEffect(count: number = 1): Token {
+    let t = count;
+    for (let i = this._position + 1; i < this._tokens.length; i += 1) {
+      if (this._tokens[i].type !== TokenType.COMMENT) {
+        t -= 1;
+        if (t <= 0) {
+          return this._tokens[i];
+        }
+      }
+    }
+    
+    return EOF_TOKEN;
   }
 
   private _advance(): Token {
@@ -121,15 +137,6 @@ export class Parser {
     return false;
   }
 
-  private _skipStatement(): void {
-    while (this._position < this._tokens.length && !this._check(TokenType.SEMICOLON)) {
-      this._advance();
-    }
-    if (this._check(TokenType.SEMICOLON)) {
-      this._advance();
-    }
-  }
-
   private _createPosition(start: number, end: number, startToken: Token): Position {
     return {
       line: startToken.line,
@@ -175,7 +182,7 @@ export class Parser {
     this._expect(TokenType.EQUAL, 'Expect "=" after syntax keyword');
     const version = this._parseStringLiteral('Expect syntax version string after "="');
     this._expect(TokenType.SEMICOLON, 'Expect ";" after syntax version');
-    
+
     return {
       type: ASTKind.SYNTAX,
       version,
@@ -190,7 +197,7 @@ export class Parser {
     }
     return {
       type: ASTKind.IDENTIFIER,
-      name: startToken.value,
+      value: startToken.value,
       position: this._createPosition(startToken.start, startToken.end, startToken),
     };
   }
@@ -205,7 +212,7 @@ export class Parser {
 
     return {
       type: ASTKind.IDENTIFIER,
-      name,
+      value: name,
       position: this._createPosition(startToken.start, this._previous().end, startToken),
     };
   }
@@ -215,7 +222,7 @@ export class Parser {
     this._expect(TokenType.PACKAGE, 'Expect "package" keyword');
     const name = this._parseQualifiedIdentifier('Expect package name after "package" keyword');
     this._expect(TokenType.SEMICOLON, 'Expect ";" after package name');
-    
+
     return {
       type: ASTKind.PACKAGE,
       name,
@@ -229,7 +236,7 @@ export class Parser {
     const publicKeyword = this._match(TokenType.PUBLIC) ? 'public' : '';
     const path = this._parseStringLiteral('Expect import path after "import" keyword');
     this._expect(TokenType.SEMICOLON, 'Expect ";" after import path');
-    
+
     return {
       type: ASTKind.IMPORT,
       publicKeyword,
@@ -243,7 +250,12 @@ export class Parser {
     let name = '';
     if (this._match(TokenType.L_PARENTHESES)) {
       const innerToken = this._expectIdentifier('Expect option name after "("');
-      name = `${name}(${innerToken.value})`;
+      name = `(${innerToken.value}`;
+      while (this._match(TokenType.DOT)) {
+        const nextToken = this._expectIdentifier('Expect identifier after "."');
+        name += `.${nextToken.value}`;
+      }
+      name += ')';
       this._expect(TokenType.R_PARENTHESES, 'Expect ")" after option name');
     } else {
       name = this._expectIdentifier('Expect option name after "option" keyword').value;
@@ -252,9 +264,10 @@ export class Parser {
       const nextToken = this._expectIdentifier('Expect identifier after "."');
       name += `.${nextToken.value}`;
     }
+
     return {
       type: ASTKind.IDENTIFIER,
-      name,
+      value: name,
       position: this._createPosition(startToken.start, this._previous().end, startToken),
     };
   }
@@ -289,7 +302,98 @@ export class Parser {
     };
   }
 
-  // reference: https://protobuf.dev/programming-guides/proto3/#options
+  private _parseFieldOptions(): FieldOptionNode[] {
+    if (!this._check(TokenType.LBRACKET)) {
+      return [];
+    }
+    this._advance(); // skip "["
+    const options: FieldOptionNode[] = [];
+    do {
+      const startToken = this._current();
+      const name = this._parseIdentifier('Expect option name');
+      this._expect(TokenType.EQUAL, 'Expect "=" after option name');
+      let value: StringLiteralNode | NumberLiteralNode | BooleanLiteralNode;
+      if (this._check(TokenType.STRING_LITERAL)) {
+        value = this._parseStringLiteral('Expect option value after "="');
+      } else if (this._check(TokenType.NUMBER_LITERAL)) {
+        value = this._parseNumberLiteral('Expect option value after "="');
+      } else if (this._check(TokenType.TRUE) || this._check(TokenType.FALSE)) {
+        value = this._parseBooleanLiteral('Expect option value after "="');
+      } else {
+        this._addError('Expect option (string, number, or boolean) value after "="');
+        value = {
+          type: ASTKind.STRING_LITERAL,
+          value: '',
+          position: this._createPosition(startToken.start, startToken.end, startToken),
+        };
+      }
+      options.push({
+        type: ASTKind.FIELD_OPTION,
+        name,
+        value,
+        position: this._createPosition(startToken.start, this._previous().end, startToken),
+      });
+    } while (this._match(TokenType.COMMA));
+    this._expect(TokenType.RBRACKET, 'Expect "]" after field options');
+    
+    return options;
+  }
+
+  private _parseEnumField(): EnumFieldNode {
+    const startToken = this._current();
+    const name = this._parseIdentifier('Expect enum field name');
+    this._expect(TokenType.EQUAL, 'Expect "=" after enum field name');
+    const value = this._parseNumberLiteral('Expect enum field value after "="');
+
+    const options = this._parseFieldOptions();
+    this._expect(TokenType.SEMICOLON, 'Expect ";" after enum field value');
+    return {
+      type: ASTKind.ENUM_FIELD,
+      name,
+      value,
+      options,
+      position: this._createPosition(startToken.start, startToken.end, startToken),
+    };
+  }
+
+  private _parseReserved(): ReservedNode {
+    const startToken = this._current();
+    this._expect(TokenType.RESERVED, 'Expect "reserved" keyword');
+    const ranges: (ToNode | NumberLiteralNode | StringLiteralNode)[] = [];
+
+    do {
+      if (this._check(TokenType.NUMBER_LITERAL)) {
+        if (this._nextEffect().type === TokenType.TO) {
+          const toStartToken = this._current();
+          const toStart = this._parseNumberLiteral('Expect number value');
+          this._expect(TokenType.TO, 'Expect "to" keyword after number literal');
+          const toEnd = this._parseNumberLiteral('Expect number value after "to" keyword');
+          ranges.push({
+            type: ASTKind.TO,
+            start: toStart,
+            end: toEnd,
+            position: this._createPosition(toStartToken.start, this._previous().end, toStartToken),
+          });
+        } else {
+          const value = this._parseNumberLiteral('Expect (string, number) value after "reserved" keyword');
+          ranges.push(value);
+        }
+      } else if (this._check(TokenType.STRING_LITERAL)) {
+        const value = this._parseStringLiteral('Expect (string, number) value after "reserved" keyword');
+        ranges.push(value);
+      } else {
+        this._addError(`Unknown token in reserved ranges: ${this._current().value}`);
+      }
+    } while (this._match(TokenType.COMMA));
+    this._expect(TokenType.SEMICOLON, 'Expect ";" after reserved ranges');
+
+    return {
+      type: ASTKind.RESERVED,
+      ranges,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    }
+  }
+
   private _parseEnum(): EnumNode {
     const startToken = this._current();
     this._expect(TokenType.ENUM, 'Expect "enum" keyword');
@@ -297,20 +401,275 @@ export class Parser {
     this._expect(TokenType.LBRACE, 'Expect "{" after enum name');
     const fields: EnumFieldNode[] = [];
     const reserved: ReservedNode[] = [];
+    const options: OptionNode[] = [];
     while (!this._check(TokenType.RBRACE) && this._position < this._tokens.length) {
-      this._position += 1;
+      if (isValidIdentifier(this._current().value) && this._nextEffect().type === TokenType.EQUAL) {
+        fields.push(this._parseEnumField());
+      } else if (this._check(TokenType.OPTION)) {
+        options.push(this._parseOption());
+      } else if (this._check(TokenType.RESERVED)) {
+        reserved.push(this._parseReserved());
+      } else {
+        this._addError(`Unknown token in enum: ${this._current().value}`);
+        this._position += 1;
+      }
     }
     this._expect(TokenType.RBRACE, 'Expect "}" after enum fields');
+
     return {
       type: ASTKind.ENUM,
       name,
       fields,
       reserved,
+      options,
       position: this._createPosition(startToken.start, startToken.end, startToken),
     };
   }
 
-  parse(): ParseResult {
+  private _parseLabel(): FiledLabelNode {
+    const startToken = this._current();
+    if (!isLabelToken(this._current())) {
+      this._addError('Expect (optional, required, repeated) label token');
+    }
+    this._position += 1;
+
+    return {
+      type: ASTKind.FIELD_LABEL,
+      value: startToken.value as LabelType,
+      position: this._createPosition(startToken.start, startToken.end, startToken),
+    };
+  }
+
+  private _parseFieldType(): FieldTypeNode {
+    const startToken = this._current();
+    const name = this._parseQualifiedIdentifier('Expect field type name').value;
+    const fieldArguments: IdentifierNode[] = [];
+    if (this._match(TokenType.L_PARENTHESES)) {
+      do {
+        fieldArguments.push(this._parseQualifiedIdentifier('Expect field type argument'));
+      } while (this._match(TokenType.COMMA));
+      this._expect(TokenType.R_PARENTHESES, 'Expect ")" after field type arguments');
+    }
+
+    return {
+      type: ASTKind.FIELD_TYPE,
+      name,
+      arguments: fieldArguments,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseField(): FieldNode {
+    const startToken = this._current();
+    const label = isLabelToken(this._current()) ? this._parseLabel() : null;
+    const fieldType = this._parseFieldType();
+    const name = this._parseIdentifier('Expect field name');
+    this._expect(TokenType.EQUAL, 'Expect "=" after field name');
+    const fieldNumber = this._parseNumberLiteral('Expect field number');
+    const options = this._parseFieldOptions();
+    this._expect(TokenType.SEMICOLON, 'Expect ";" after field value');
+
+    return {
+      type: ASTKind.FIELD,
+      name,
+      fieldType,
+      fieldNumber,
+      label,
+      options,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseExtend(): ExtendNode {
+    const startToken = this._current();
+    this._expect(TokenType.EXTEND, 'Expect "extend" keyword');
+    const name = this._parseIdentifier('Expect extend name after "extend" keyword');
+    this._expect(TokenType.LBRACE, 'Expect "{" after extend name');
+    const fields: FieldNode[] = [];
+    while (!this._check(TokenType.RBRACE) && this._position < this._tokens.length) {
+      if (isIdentifierChar(this._current().value)) {
+        fields.push(this._parseField());
+      } else {
+        this._addError(`Unknown token in extend: ${this._current().value}`);
+        this._position += 1;
+      }
+    }
+    this._expect(TokenType.RBRACE, 'Expect "}" after extend fields');
+
+    return {
+      type: ASTKind.EXTEND,
+      name,
+      fields,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseExtensions(): ExtensionsNode {
+    const startToken = this._current();
+    this._expect(TokenType.EXTENSIONS, 'Expect "extensions" keyword');
+    const ranges: (NumberLiteralNode | ToNode)[] = [];
+    do {
+      if (this._nextEffect().type === TokenType.TO) {
+        const toStartToken = this._current();
+        const toStart = this._parseNumberLiteral('Expect number value');
+        this._expect(TokenType.TO, 'Expect "to" keyword after number literal');
+        const toEnd = this._parseNumberLiteral('Expect number value after "to" keyword');
+        ranges.push({
+          type: ASTKind.TO,
+          start: toStart,
+          end: toEnd,
+          position: this._createPosition(toStartToken.start, this._previous().end, toStartToken),
+        });
+      } else {
+        ranges.push(this._parseNumberLiteral('Expect extensions range'));
+      }
+    } while (this._match(TokenType.COMMA));
+    this._expect(TokenType.SEMICOLON, 'Expect ";" after extensions range');
+
+    return {
+      type: ASTKind.EXTENSIONS,
+      ranges,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseOneof(): OneofNode {
+    const startToken = this._current();
+    this._expect(TokenType.ONEOF, 'Expect "oneof" keyword');
+    const name = this._parseIdentifier('Expect oneof name after "oneof" keyword');
+    this._expect(TokenType.LBRACE, 'Expect "{" after oneof name');
+    const fields: FieldNode[] = [];
+    while (!this._check(TokenType.RBRACE) && this._position < this._tokens.length) {
+      if (isIdentifierChar(this._current().value)) {
+        fields.push(this._parseField());
+      } else {
+        this._addError(`Unknown token in oneof: ${this._current().value}`);
+        this._position += 1;
+      }
+    }
+    this._expect(TokenType.RBRACE, 'Expect "}" after oneof fields');
+
+    return {
+      type: ASTKind.ONEOF,
+      name,
+      fields,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _isStatementStart(type: TokenType): boolean {
+    return (
+      this._check(type) &&
+      isIdentifierChar(this._nextEffect().value)
+      && this._nextEffect(2).type === TokenType.LBRACE
+    );
+  }
+
+  private _parseMessage(): MessageNode {
+    const startToken = this._current();
+    this._expect(TokenType.MESSAGE, 'Expect "message" keyword');
+    const name = this._parseIdentifier('Expect message name after "message" keyword');
+    this._expect(TokenType.LBRACE, 'Expect "{" after message name');
+    const oneofs: OneofNode[] = [];
+    const enums: EnumNode[] = [];
+    let extensions: ExtensionsNode | null = null;
+    const extendNodes: ExtendNode[] = [];
+    const reserved: ReservedNode[] = [];
+    const messages: MessageNode[] = [];
+    const fields: FieldNode[] = [];
+
+    while (!this._check(TokenType.RBRACE) && this._position < this._tokens.length) {
+      if (this._isStatementStart(TokenType.ONEOF)) {
+        oneofs.push(this._parseOneof());
+      } else if (this._isStatementStart(TokenType.ENUM)) {
+        enums.push(this._parseEnum());
+      } else if (this._check(TokenType.EXTENSIONS) && this._nextEffect().type === TokenType.NUMBER_LITERAL) {
+        extensions = this._parseExtensions();
+      } else if (this._isStatementStart(TokenType.EXTEND)) {
+        extendNodes.push(this._parseExtend());
+      } else if (
+        this._check(TokenType.RESERVED) && (
+          this._nextEffect().type === TokenType.STRING_LITERAL ||
+          this._nextEffect().type === TokenType.NUMBER_LITERAL
+        )
+      ) {
+        reserved.push(this._parseReserved());
+      } else if (this._isStatementStart(TokenType.MESSAGE)) {
+        messages.push(this._parseMessage());
+      } else if (isIdentifierChar(this._current().value)) {
+        fields.push(this._parseField());
+      } else {
+        this._addError(`Unknown token in message: ${this._current().value}`);
+        this._position += 1;
+      }
+    }
+    this._expect(TokenType.RBRACE, 'Expect "}" after message fields');
+
+    return {
+      type: ASTKind.MESSAGE,
+      name,
+      fields,
+      oneofs,
+      enums,
+      extensions,
+      extends: extendNodes,
+      reserved,
+      messages,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseRpcMethod(): RpcMethodNode {
+    const startToken = this._current();
+    this._expect(TokenType.RPC, 'Expect "rpc" keyword');
+    const name = this._parseIdentifier('Expect rpc method name after "rpc" keyword');
+    
+    this._expect(TokenType.L_PARENTHESES, 'Expect "(" after rpc method name');
+    const inputType = this._parseIdentifier('Expect request type after "("');
+    this._expect(TokenType.R_PARENTHESES, 'Expect ")" after request type');
+    
+    this._expect(TokenType.RETURNS, 'Expect "returns" keyword');
+
+    this._expect(TokenType.L_PARENTHESES, 'Expect "(" after "returns" keyword');
+    const outputType = this._parseIdentifier('Expect response type after "returns" keyword');
+    this._expect(TokenType.R_PARENTHESES, 'Expect ")" after response type');
+    
+    this._expect(TokenType.SEMICOLON, 'Expect ";" after rpc method');
+    
+    return {
+      type: ASTKind.RPC_METHOD,
+      name,
+      inputType,
+      outputType,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  private _parseService(): ServiceNode {
+    const startToken = this._current();
+    this._expect(TokenType.SERVICE, 'Expect "service" keyword');
+    const name = this._parseIdentifier('Expect service name after "service" keyword');
+    this._expect(TokenType.LBRACE, 'Expect "{" after service name');
+    const methods: RpcMethodNode[] = [];
+    while (!this._check(TokenType.RBRACE) && this._position < this._tokens.length) {
+      if (isIdentifierChar(this._current().value)) {
+        methods.push(this._parseRpcMethod());
+      } else {
+        this._addError(`Unknown token in service: ${this._current().value}`);
+        this._position += 1;
+      }
+    }
+    this._expect(TokenType.RBRACE, 'Expect "}" after service methods');
+
+    return {
+      type: ASTKind.SERVICE,
+      name,
+      methods,
+      position: this._createPosition(startToken.start, this._previous().end, startToken),
+    };
+  }
+
+  parse(): ParserOutput {
     // filter comment token
     this._tokens = this._tokens.filter((token) => token.type !== TokenType.COMMENT);
 
@@ -321,10 +680,10 @@ export class Parser {
       package: null,
       imports: [],
       options: [],
-      messages: [],
       enums: [],
-      services: [],
       extends: [],
+      messages: [],
+      services: [],
     };
     if (this._check(TokenType.SYNTAX)) {
       protoFile.syntax = this._parseSyntax();
@@ -339,8 +698,16 @@ export class Parser {
         protoFile.options.push(this._parseOption());
       } else if (this._check(TokenType.ENUM)) {
         protoFile.enums.push(this._parseEnum());
+      } else if (this._check(TokenType.EXTEND)) {
+        protoFile.extends.push(this._parseExtend());
+      } else if (this._check(TokenType.MESSAGE)) {
+        protoFile.messages.push(this._parseMessage());
+      } else if (this._check(TokenType.SERVICE)) {
+        protoFile.services.push(this._parseService());
       } else {
-        // TODO: this._addError(`Unknown token: ${this._current().value}`);
+        if (!this._check(TokenType.SEMICOLON)) {
+          this._addError(`Unknown token in proto file: ${this._current().value}`);
+        }
         this._position += 1;
       }
     }
