@@ -78,7 +78,7 @@ export class Parser {
         }
       }
     }
-    
+
     return EOF_TOKEN;
   }
 
@@ -335,7 +335,7 @@ export class Parser {
       });
     } while (this._match(TokenType.COMMA));
     this._expect(TokenType.RBRACKET, 'Expect "]" after field options');
-    
+
     return options;
   }
 
@@ -623,19 +623,19 @@ export class Parser {
     const startToken = this._current();
     this._expect(TokenType.RPC, 'Expect "rpc" keyword');
     const name = this._parseIdentifier('Expect rpc method name after "rpc" keyword');
-    
+
     this._expect(TokenType.L_PARENTHESES, 'Expect "(" after rpc method name');
     const inputType = this._parseIdentifier('Expect request type after "("');
     this._expect(TokenType.R_PARENTHESES, 'Expect ")" after request type');
-    
+
     this._expect(TokenType.RETURNS, 'Expect "returns" keyword');
 
     this._expect(TokenType.L_PARENTHESES, 'Expect "(" after "returns" keyword');
     const outputType = this._parseIdentifier('Expect response type after "returns" keyword');
     this._expect(TokenType.R_PARENTHESES, 'Expect ")" after response type');
-    
+
     this._expect(TokenType.SEMICOLON, 'Expect ";" after rpc method');
-    
+
     return {
       type: ASTKind.RPC_METHOD,
       name,

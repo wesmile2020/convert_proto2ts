@@ -1,21 +1,39 @@
 import { Lexer } from '@/lexer/Lexer';
 import { Parser } from '@/parser/Parser';
-import type { LexerError } from '@/lexer/TokenType';
-import type { ParserError } from '@/parser/ASTType';
 import { Generate, type GenerateOptions  } from './Generate';
 
-interface CompilerOutput {
+interface CompilerError {
+  message: string;
+  position: {
+    line: number;
+    column: number;
+    start: number;
+    end: number;
+  };
+}
+
+export interface CompilerOutput {
   code: string;
-  errors: (LexerError | ParserError)[];
+  errors: CompilerError[];
 }
 
 export function compile(input: string, options: Partial<GenerateOptions> = {}): CompilerOutput {
   const lexer = new Lexer(input);
   const lexerOutput = lexer.tokenize();
   if (lexerOutput.errors.length > 0) {
+    const errors = lexerOutput.errors.map((error) => ({
+      message: error.message,
+      position: {
+        line: error.line,
+        column: error.column,
+        start: error.position,
+        end: error.position + 1,
+      },
+    }));
+
     return {
       code: '',
-      errors: lexerOutput.errors,
+      errors,
     };
   }
   const parser = new Parser(lexerOutput.tokens);

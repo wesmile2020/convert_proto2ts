@@ -41,9 +41,10 @@ class Lexer {
       message,
       line: line ?? this._line,
       column: column ?? this._column,
+      position: this._position,
     });
   }
-  
+
   private _current(): string {
     if (this._position >= this._source.length) {
       return '';
@@ -222,7 +223,7 @@ class Lexer {
     while (this._position < this._source.length) {
       const start = this._position;
       const char = this._current();
-      
+
       if (isWhitespace(char)) {
         this._skipWhitespace();
         continue;

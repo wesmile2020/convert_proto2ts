@@ -97,4 +97,5 @@ export interface LexerError {
   message: string;
   line: number;
   column: number;
+  position: number;
 }
