@@ -32,13 +32,17 @@
     }
   },
   "scripts": {
+    "dev": "vite --config vite.preview.config.ts",
     "build": "vite build && npm run typings",
+    "build:preview": "vite build --config vite.preview.config.ts",
     "typings": "extract-typings -e ./src/index.ts -o ./dist/typings -f index",
     "lint": "oxlint",
     "format": "oxfmt"
   },
   "devDependencies": {
     "@types/node": "^25.0.2",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
     "extract-typings": "^1.0.2",
     "oxfmt": "^0.24.0",
     "oxlint": "^1.39.0",
@@ -47,5 +51,11 @@
   },
   "overrides": {
     "vite": "8.0.0-beta.2"
+  },
+  "dependencies": {
+    "antd": "^6.2.0",
+    "monaco-editor": "^0.55.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   }
 }

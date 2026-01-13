@@ -36,6 +36,13 @@ export function compile(input: string, options: Partial<GenerateOptions> = {}): 
       errors,
     };
   }
+  if (lexerOutput.tokens.length === 0) {
+    return {
+      code: '',
+      errors: [],
+    };
+  }
+
   const parser = new Parser(lexerOutput.tokens);
   const parserOutput = parser.parse();
   if (parserOutput.errors.length > 0 || parserOutput.ast === null) {
