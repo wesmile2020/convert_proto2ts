@@ -1,6 +1,6 @@
 import { Lexer } from '@/lexer/Lexer';
 import { Parser } from '@/parser/Parser';
-import { Generate, type GenerateOptions  } from './Generate';
+import { Generate, type GenerateOptions } from './Generate';
 
 interface CompilerError {
   message: string;

@@ -1,4 +1,4 @@
-import type { TokenType } from "@/lexer/TokenType";
+import { type TokenType } from '@/lexer/TokenType';
 
 export interface Position {
   line: number;

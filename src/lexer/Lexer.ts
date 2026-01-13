@@ -33,7 +33,7 @@ class Lexer {
       column: startColumn ?? this._column,
       start: start ?? this._position,
       end: this._position,
-    }
+    };
   }
 
   private _addError(message: string, line?: number, column?: number): void {

@@ -7,6 +7,7 @@ npm install convert_proto2ts
 ```
 
 ## Usage
+
 ```typescript
 import { compile } from 'convert_proto2ts';
 

@@ -82,7 +82,7 @@ export const enum TokenType {
   COLON,
   /** end of file */
   EOF,
-};
+}
 
 export interface Token {
   type: TokenType;

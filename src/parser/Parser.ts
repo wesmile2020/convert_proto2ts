@@ -290,7 +290,7 @@ export class Parser {
         type: ASTKind.STRING_LITERAL,
         value: '',
         position: this._createPosition(startToken.start, startToken.end, startToken),
-      }
+      };
     }
     this._expect(TokenType.SEMICOLON, 'Expect ";" after option value');
 
@@ -375,11 +375,15 @@ export class Parser {
             position: this._createPosition(toStartToken.start, this._previous().end, toStartToken),
           });
         } else {
-          const value = this._parseNumberLiteral('Expect (string, number) value after "reserved" keyword');
+          const value = this._parseNumberLiteral(
+            'Expect (string, number) value after "reserved" keyword',
+          );
           ranges.push(value);
         }
       } else if (this._check(TokenType.STRING_LITERAL)) {
-        const value = this._parseStringLiteral('Expect (string, number) value after "reserved" keyword');
+        const value = this._parseStringLiteral(
+          'Expect (string, number) value after "reserved" keyword',
+        );
         ranges.push(value);
       } else {
         this._addError(`Unknown token in reserved ranges: ${this._current().value}`);
@@ -391,7 +395,7 @@ export class Parser {
       type: ASTKind.RESERVED,
       ranges,
       position: this._createPosition(startToken.start, this._previous().end, startToken),
-    }
+    };
   }
 
   private _parseEnum(): EnumNode {
@@ -560,8 +564,8 @@ export class Parser {
   private _isStatementStart(type: TokenType): boolean {
     return (
       this._check(type) &&
-      isIdentifierChar(this._nextEffect().value)
-      && this._nextEffect(2).type === TokenType.LBRACE
+      isIdentifierChar(this._nextEffect().value) &&
+      this._nextEffect(2).type === TokenType.LBRACE
     );
   }
 
@@ -583,15 +587,17 @@ export class Parser {
         oneofs.push(this._parseOneof());
       } else if (this._isStatementStart(TokenType.ENUM)) {
         enums.push(this._parseEnum());
-      } else if (this._check(TokenType.EXTENSIONS) && this._nextEffect().type === TokenType.NUMBER_LITERAL) {
+      } else if (
+        this._check(TokenType.EXTENSIONS) &&
+        this._nextEffect().type === TokenType.NUMBER_LITERAL
+      ) {
         extensions = this._parseExtensions();
       } else if (this._isStatementStart(TokenType.EXTEND)) {
         extendNodes.push(this._parseExtend());
       } else if (
-        this._check(TokenType.RESERVED) && (
-          this._nextEffect().type === TokenType.STRING_LITERAL ||
-          this._nextEffect().type === TokenType.NUMBER_LITERAL
-        )
+        this._check(TokenType.RESERVED) &&
+        (this._nextEffect().type === TokenType.STRING_LITERAL ||
+          this._nextEffect().type === TokenType.NUMBER_LITERAL)
       ) {
         reserved.push(this._parseReserved());
       } else if (this._isStatementStart(TokenType.MESSAGE)) {

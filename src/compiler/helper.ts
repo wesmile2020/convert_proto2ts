@@ -1,27 +1,27 @@
-import type { FieldNode, FieldTypeNode } from '@/parser/ASTType';
+import type { FieldNode } from '@/parser/ASTType';
 
 export function getWhitespace(count: number): string {
-  let s = ''
+  let s = '';
   for (let i = 0; i < count; i++) {
-    s += ' '
+    s += ' ';
   }
   return s;
 }
 
 function transformInternalType(type: string): string {
   if (
-    type === 'double'
-    || type === 'float'
-    || type === 'int32'
-    || type === 'int64'
-    || type === 'uint32'
-    || type === 'uint64'
-    || type === 'sint32'
-    || type === 'sint64'
-    || type === 'fixed32'
-    || type === 'fixed64'
-    || type === 'sfixed32'
-    || type === 'sfixed64'
+    type === 'double' ||
+    type === 'float' ||
+    type === 'int32' ||
+    type === 'int64' ||
+    type === 'uint32' ||
+    type === 'uint64' ||
+    type === 'sint32' ||
+    type === 'sint64' ||
+    type === 'fixed32' ||
+    type === 'fixed64' ||
+    type === 'sfixed32' ||
+    type === 'sfixed64'
   ) {
     return 'number';
   }
@@ -56,18 +56,18 @@ export function transformFieldType(field: FieldNode): string {
     suffix = '[]';
   }
   if (
-    fieldType.name === 'double'
-    || fieldType.name === 'float'
-    || fieldType.name === 'int32'
-    || fieldType.name === 'int64'
-    || fieldType.name === 'uint32'
-    || fieldType.name === 'uint64'
-    || fieldType.name === 'sint32'
-    || fieldType.name === 'sint64'
-    || fieldType.name === 'fixed32'
-    || fieldType.name === 'fixed64'
-    || fieldType.name === 'sfixed32'
-    || fieldType.name === 'sfixed64'
+    fieldType.name === 'double' ||
+    fieldType.name === 'float' ||
+    fieldType.name === 'int32' ||
+    fieldType.name === 'int64' ||
+    fieldType.name === 'uint32' ||
+    fieldType.name === 'uint64' ||
+    fieldType.name === 'sint32' ||
+    fieldType.name === 'sint64' ||
+    fieldType.name === 'fixed32' ||
+    fieldType.name === 'fixed64' ||
+    fieldType.name === 'sfixed32' ||
+    fieldType.name === 'sfixed64'
   ) {
     return `${prefix}number${suffix}`;
   }
@@ -87,7 +87,7 @@ export function transformFieldType(field: FieldNode): string {
       name = 'Map';
     }
     const args = fieldType.arguments.map((item) => transformInternalType(item.value));
-    return `${prefix}${name}<${args.join(', ')}>${suffix}`
+    return `${prefix}${name}<${args.join(', ')}>${suffix}`;
   }
 
   return `${prefix}${fieldType.name}${suffix}`;

@@ -1,6 +1,12 @@
 import { RESERVED_KEYWORDS } from './define';
 import { getWhitespace, transformFieldType } from './helper';
-import type { EnumNode, ExtendNode, ImportNode, MessageNode, ProtoFileNode } from '@/parser/ASTType';
+import type {
+  EnumNode,
+  ExtendNode,
+  ImportNode,
+  MessageNode,
+  ProtoFileNode,
+} from '@/parser/ASTType';
 
 export interface GenerateOptions {
   indentSize: number;
@@ -108,7 +114,7 @@ export class Generate {
       this._generateEnum(this._ast.enums[i]);
       this._output.push('');
     }
-    
+
     for (let i = 0; i < this._ast.messages.length; i += 1) {
       this._generateMessage(this._ast.messages[i]);
       this._output.push('');

@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import path from 'path';
-import { resolve } from 'dns';
 
 export default defineConfig({
   build: {

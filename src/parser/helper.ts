@@ -6,7 +6,7 @@ export function isValidIdentifier(name: string): boolean {
 
 export function isLabelToken(token: Token): boolean {
   return (
-    token.type === TokenType.OPTIONAL || 
+    token.type === TokenType.OPTIONAL ||
     token.type === TokenType.REQUIRED ||
     token.type === TokenType.REPEATED
   );
