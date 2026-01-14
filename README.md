@@ -34,3 +34,8 @@ console.log(compilerOutput);
 
 - `indentSize`: The number of spaces to use for indentation in the generated TypeScript code. Default is 2.
 - `pathResolver`: A function that takes a path to a proto file and returns the corresponding path to the TypeScript declaration file. Default is `(path: string) => path`.
+
+
+## Preview
+
+You can preview the generated TypeScript code in the browser by visiting the following link: [Preview](https://wesmile2020.github.io/convert_proto2ts/)
