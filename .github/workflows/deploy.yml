@@ -1,0 +1,38 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: ['preview'] # 当向preview分支推送代码时触发此工作流
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 将仓库代码拉取到虚拟机环境
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: inspect
+
+      # 2. 设置Node.js环境（以Node项目为例）
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      # 3. 安装依赖并构建
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build:preview
+
+      # 4. 部署到GitHub Pages分支
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: pages # 部署到的目标分支
+          folder: output # 你项目构建后生成的静态文件目录

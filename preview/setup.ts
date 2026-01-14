@@ -7,5 +7,5 @@ self.MonacoEnvironment = {
       return new TypeScriptWorker();
     }
     return new EditorWorker();
-  }
+  },
 };

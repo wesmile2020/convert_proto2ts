@@ -6,6 +6,13 @@
   background-color: #fff;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  font-family: monospace;
 }
 
 .title {
@@ -14,4 +21,18 @@
 
 .content {
   padding: 8px;
+}
+
+.errors {
+  list-style: none;
+}
+
+.position {
+  font-weight: bold;
+  color: cornflowerblue;
+}
+
+.message {
+  margin-left: 8px;
+  color: rgb(197, 87, 87);
 }

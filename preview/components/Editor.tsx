@@ -5,8 +5,13 @@ import { compile } from '@/index';
 
 import styles from './Editor.module.css';
 
+type CompilerOutput = ReturnType<typeof compile>;
+
+export type CompilerError = CompilerOutput['errors'][number];
+
 interface Props {
   onCompile?: (code: string) => void;
+  onError?: (errors: CompilerOutput['errors']) => void;
 }
 
 export default function Editor(props: Props): JSX.Element {
@@ -33,6 +38,7 @@ export default function Editor(props: Props): JSX.Element {
       timer = window.setTimeout(() => {
         const protoCode = protoEditor.getValue();
         const output = compile(protoCode);
+        props.onError?.(output.errors);
         if (output.errors.length === 0) {
           props.onCompile?.(output.code);
         }
@@ -40,9 +46,5 @@ export default function Editor(props: Props): JSX.Element {
     });
   }, []);
 
-  return (
-    <div className={styles.editor}
-      ref={domRef}>
-    </div>
-  );
+  return <div className={styles.editor} ref={domRef}></div>;
 }

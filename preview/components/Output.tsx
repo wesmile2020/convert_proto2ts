@@ -31,9 +31,5 @@ export default function Output(props: Props): JSX.Element {
     editorRef.current?.setValue(props.value);
   }, [props.value]);
 
-  return (
-    <div className={styles.output}
-      ref={domRef}>
-    </div>
-  );
+  return <div className={styles.output} ref={domRef}></div>;
 }
