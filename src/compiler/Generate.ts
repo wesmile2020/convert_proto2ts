@@ -120,6 +120,11 @@ export class Generate {
       this._output.push('');
     }
 
+    for (let i = 0; i < this._ast.extends.length; i += 1) {
+      this._generateExtend(this._ast.extends[i]);
+      this._output.push('');
+    }
+
     return this._output.join('\n');
   }
 }
